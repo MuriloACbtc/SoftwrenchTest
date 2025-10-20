@@ -27,6 +27,7 @@ namespace InterviewTestPagination.Models.Todo {
             }
         }
 
+        // Ordenação ao abrir aplicação
         public IEnumerable<Todo> All() {
             return DataSource.Values.OrderByDescending(t => t.CreatedDate);
         }

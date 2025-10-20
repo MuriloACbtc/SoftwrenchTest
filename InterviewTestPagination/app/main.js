@@ -30,7 +30,40 @@
             $scope.todos = [];
             $scope.loading = true;
 
+            // Inicializando variáveis de paginação
+
+            $scope.sortColumn = "createdDate";
+            $scope.reverseSort = true;
+            $scope.sortClicked = false;
+
+            // Ordenando os dados
+
+            $scope.sortData = function (column) {
+                $scope.sortClicked = true;
+
+                if ($scope.sortColumn == column) {
+                    $scope.reverseSort = !$scope.reverseSort;
+                }
+                else {
+                    $scope.sortColumn = column;
+                    $scope.reverseSort = false;
+                }
+            };
+
+            // Indicador de coluna ordenada
+
+            $scope.getSortClass = function (column) {
+                if (!$scope.sortClicked) {
+                    return "";
+                }
+                if ($scope.sortColumn == column) {
+                    return $scope.reverseSort ? '▼' : '▲';
+                }
+                return "";
+            };
+
             // Chamando os dados da API
+
             $http.get("api/Todo").then(function (response) { $scope.todos = response.data; }).finally(function () { $scope.loading = false });
         }
 

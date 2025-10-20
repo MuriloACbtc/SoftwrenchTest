@@ -1,5 +1,5 @@
 ﻿<!-- table of contents -->
-<table>
+<table ng-if="!loading">
     <!-- table:header -->
     <tr>
         <!--
@@ -21,10 +21,12 @@
             . the indicators don't need to look pretty, they just have to be distinct (ascending from descending) and communicate well what they're doing
 
         -->
+
         <!-- // Atribuindo ação para ordenar itens ao clicar no cabeçalho -->
-        <th>Id </th>
-        <th>Task </th>
-        <th>Created Date </th>
+
+        <th ng-click="sortData('id')">Id {{ getSortClass('id') }}</th>
+        <th ng-click="sortData('task')">Task {{ getSortClass('task') }}</th>
+        <th ng-click="sortData('createdDate')">Created Date {{ getSortClass('createdDate') }}</th>
     </tr>
     
     <!-- table:body -->
@@ -37,16 +39,19 @@
 
     -->
 
-    <tr ng-if="loading">
-        <td colspan="3">Loading...</td> 
-    </tr>
-
-    <tr ng-repeat="todo in todos track by $index">
+    <tr ng-repeat="todo in todos | orderBy:sortColumn:reverseSort track by $index">
         <td>{{todo.id}}</td>
         <td>{{todo.task}}</td>
         <td>{{todo.createdDate | date:'MM/dd/yyyy' }}</td>
     </tr>
 </table>
+
+<!-- Mensagem de carregamento enquanto busca os dados no repositório-->
+
+<div class="loading-container" ng-if="loading">
+    <div class="spinner"></div>
+    <p>Carregando dados do repositório</p>
+</div>
 
 <!-- pagination component -->
 <pagination></pagination>

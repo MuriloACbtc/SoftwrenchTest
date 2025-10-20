@@ -18,6 +18,6 @@ namespace InterviewTestPagination.Models {
         /// Example signature of a method that lists entries of model T
         /// </summary>
         /// <returns></returns>
-        IEnumerable<T> List(/* parameters */);
+        IEnumerable<T> List(int page, int pageSize, out int totalCount);
     }
 }

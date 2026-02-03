@@ -3,106 +3,165 @@
 
     angular
         .module("todoApp")
-        .directive("todoPaginatedList", [todoPaginatedList])
-        .directive("pagination", [pagination]);
-
+        .directive("todoPaginatedList", todoPaginatedList)
+        .directive("pagination", pagination);
     /**
-     * Directive definition function of 'todoPaginatedList'.
-     * 
-     * TODO: correctly parametrize scope (inherited? isolated? which properties?)
-     * TODO: create appropriate functions (link? controller?) and scope bindings
-     * TODO: make appropriate general directive configuration (support transclusion? replace content? EAC?)
-     * 
-     * @returns {} directive definition object
-     */
+* Directive definition function of 'todoPaginatedList'.
+* 
+* TODO: correctly parametrize scope (inherited? isolated? which properties?)
+* TODO: create appropriate functions (link? controller?) and scope bindings
+* TODO: make appropriate general directive configuration (support transclusion? replace content? EAC?)
+* 
+* @returns {} directive definition object
+*/
     function todoPaginatedList() {
-        var directive = {
-            restrict: "E", 
+        return {
+            restrict: "E",
+            scope: {},
             templateUrl: "app/templates/todo.list.paginated.html",
-            scope: {}, 
-            controller: ["$scope", "$http", controller]
+            controller: ["$scope", "$http", function ($scope, $http) {
+
+                var vm = this;
+
+                // pager state
+                vm.pager = {
+                    page: 1,
+                    pageSize: 20, // default
+                    totalItems: 0,
+                    totalPages: 1,
+                    sortField: "CreatedDate",
+                    sortDir: "desc"
+                };
+
+                // estado controlado via controllerAs (vm)
+                vm.todos = [];
+                vm.loading = false;
+                vm.error = null;
+
+                // load function (requests backend)
+                vm.load = function () {
+                    vm.loading = true;
+                    vm.error = null;
+
+
+                    var params = {
+                        page: vm.pager.page,
+                        pageSize: vm.pager.pageSize,
+                        sortField: vm.pager.sortField,
+                        sortDir: vm.pager.sortDir
+                    };
+
+                    // if pageSize is 0 (meaning 'all'), send pageSize=0
+                    $http.get("/api/todo", { params: params })
+                        .then(function (resp) {
+                            // normaliza a resposta do backend para lidar com várias possíveis keys/casing
+                            var raw = resp.data || {};
+
+                            // suporta ambos: { Items: [...] } e { items: [...] } e também retorno direto de array
+                            var items = null;
+                            if (raw.Items && angular.isArray(raw.Items)) {
+                                items = raw.Items;
+                            } else if (raw.items && angular.isArray(raw.items)) {
+                                items = raw.items;
+                            } else if (angular.isArray(raw)) {
+                                items = raw;
+                            } else {
+                                items = [];
+                            }
+
+                            // total pode estar em Total ou total ou não existir
+                            var total = raw.Total || raw.total || (angular.isArray(items) ? items.length : 0);
+
+                            // aplica ao controller (controllerAs vm)
+                            vm.todos = items;
+                            vm.pager.totalItems = total;
+                            vm.pager.page = raw.Page || raw.page || vm.pager.page;
+                            vm.pager.pageSize = raw.PageSize || raw.pageSize || vm.pager.pageSize;
+
+                            // calcula totalPages
+                            vm.pager.totalPages = (vm.pager.pageSize <= 0)
+                                ? 1
+                                : Math.max(1, Math.ceil(vm.pager.totalItems / vm.pager.pageSize));
+
+                            vm.loading = false;
+
+                        });
+                };
+
+                // pager helpers used by pagination directive
+                vm.first = function () {
+                    vm.pager.page = 1;
+                    vm.load();
+                };
+                vm.prev = function () {
+                    if (vm.pager.page > 1) {
+                        vm.pager.page--;
+                        vm.load();
+                    }
+                };
+                vm.next = function () {
+                    if (vm.pager.page < vm.pager.totalPages) {
+                        vm.pager.page++;
+                        vm.load();
+                    }
+                };
+                vm.last = function () {
+                    vm.pager.page = vm.pager.totalPages || 1;
+                    vm.load();
+                };
+                vm.goto = function (p) {
+                    var page = parseInt(p, 10) || 1;
+                    page = Math.max(1, Math.min(vm.pager.totalPages || 1, page));
+                    vm.pager.page = page;
+                    vm.load();
+                };
+                vm.setPageSize = function (size) {
+                    // força number
+                    var s = parseInt(size, 10);
+
+                    if (isNaN(s) || s === 0) {
+                        // ALL
+                        vm.pager.pageSize = 0;
+                        vm.pager.page = 1;
+                    } else {
+                        vm.pager.pageSize = s;
+                        vm.pager.page = 1;
+                    }
+
+                    vm.load();
+                };
+
+                vm.sort = function (field) {
+                    if (vm.pager.sortField === field) {
+                        // invert direction
+                        vm.pager.sortDir = vm.pager.sortDir === "asc" ? "desc" : "asc";
+                    } else {
+                        // first click on a new field -> ASC
+                        vm.pager.sortField = field;
+                        vm.pager.sortDir = "asc";
+                    }
+                    vm.pager.page = 1;
+                    vm.load();
+                };
+
+
+                // expose controller for pagination directive via require
+                this.pager = vm.pager;
+                this.first = vm.first;
+                this.prev = vm.prev;
+                this.next = vm.next;
+                this.last = vm.last;
+                this.goto = vm.goto;
+                this.setPageSize = vm.setPageSize;
+                this.sort = vm.sort;
+                this.load = vm.load;
+
+                // initial load
+                vm.load();
+
+            }],
+            controllerAs: "vm"
         };
-
-        function controller($scope, $http) {
-
-            // Inicializando variáveis de escopo
-
-            $scope.todos = [];
-            $scope.loading = true;
-
-            // Inicializando variáveis de paginação
-
-            $scope.currentPage = 1;
-            $scope.itemsPerPage = '20';
-            $scope.totalItems = 0;
-            $scope.pageCount = 0;
-
-
-            // Inicializando variáveis de ordenação
-
-            $scope.sortColumn = "createdDate";
-            $scope.reverseSort = true;
-            $scope.sortClicked = false;
-
-            // Ordenando os dados
-
-            $scope.sortData = function (column) {
-                $scope.sortClicked = true;
-
-                if ($scope.sortColumn == column) {
-                    $scope.reverseSort = !$scope.reverseSort;
-                }
-                else {
-                    $scope.sortColumn = column;
-                    $scope.reverseSort = false;
-                }
-            };
-
-            // Indicador de coluna ordenada
-
-            $scope.getSortClass = function (column) {
-                if (!$scope.sortClicked) return "";
-                if ($scope.sortColumn == column) return $scope.reverseSort ? '▼' : '▲';
-                return "";
-            };
-
-            // Chamando os dados da API
-
-            $scope.loadTodos = function () {
-                $scope.loading = true;
-
-                // Garante que o valor 1 (all) retorne todos os itens
-                var perPage = ($scope.itemsPerPage === 1)
-                    ? $scope.totalItems || Number.MAX_SAFE_INTEGER
-                    : ($scope.itemsPerPage);
-
-                $http.get('/api/Todo?page=' + $scope.currentPage + '&pageSize=' + perPage)
-                    .then(function (response) {
-                        $scope.todos = response.data.items;
-                        $scope.totalItems = response.data.totalCount;
-
-                        // Quando for "all", força o total em uma única página
-                        $scope.pageCount = ($scope.itemsPerPage === 1)
-                            ? 1
-                            : Math.ceil($scope.totalItems / perPage);
-                    }).finally(function () {
-                        $scope.loading = false;
-                    });
-            };
-
-
-            $scope.$on('pageChanged', function (event, data) {
-                $scope.currentPage = data.page;
-                $scope.itemsPerPage = data.itemsPerPage;
-                $scope.loadTodos();
-            });
-
-            $scope.loadTodos();
-        }
-
-        function link(scope, element, attrs) { }
-
-        return directive;
     }
 
     /**
@@ -116,68 +175,24 @@
      * @returns {} directive definition object
      */
     function pagination() {
-        var directive = {
-            restrict: "E", // example setup as an element only
+        return {
+            restrict: "E",
+            require: "^todoPaginatedList",
             templateUrl: "app/templates/pagination.html",
-            scope: {totalItems: "=", itemsPerPage: "=", currentPage: "="},
-            controller: ["$scope", controller],
-            link: link
+            link: function (scope, elem, attrs, todoCtrl) {
+                // bind pager from the parent directive controller
+                scope.pager = todoCtrl.pager;
+
+                // helper call map
+                scope.first = function () { todoCtrl.first(); };
+                scope.prev = function () { todoCtrl.prev(); };
+                scope.next = function () { todoCtrl.next(); };
+                scope.last = function () { todoCtrl.last(); };
+                scope.goto = function () { todoCtrl.goto(scope.pager.page); };
+                scope.onPageSizeChange = function (val) { todoCtrl.setPageSize(val); };
+                scope.sort = function (field) { todoCtrl.sort(field); };
+            }
         };
-
-        function controller($scope) {
-
-            // Atualiza número total de páginas
-
-            $scope.$watchGroup(['totalItems', 'itemsPerPage'], function () {
-                if ($scope.itemsPerPage === 1) {
-                    $scope.totalPages = 1;
-                    $scope.currentPage = 1;
-                } else {
-                    const perPage = parseInt($scope.itemsPerPage) || 20;
-                    $scope.totalPages = Math.ceil($scope.totalItems / perPage) || 1;
-                }
-            });
-
-            // Ações de navegação
-
-            $scope.firstPage = function () {
-                if ($scope.currentPage > 1) $scope.changePage(1);
-            };
-
-            $scope.prevPage = function () {
-                if ($scope.currentPage > 1) $scope.changePage($scope.currentPage - 1);
-            };
-
-            $scope.nextPage = function () {
-                if ($scope.currentPage < $scope.totalPages) $scope.changePage($scope.currentPage + 1);
-            };
-
-            $scope.lastPage = function () {
-                if ($scope.currentPage < $scope.totalPages) $scope.changePage($scope.totalPages);
-            };
-
-            // Alterar página
-
-            $scope.changePage = function (page) {
-                if (page < 1 || page > $scope.totalPages) return;
-                $scope.currentPage = page;
-                $scope.$emit("pageChanged", {
-                    page: $scope.currentPage,
-                    itemsPerPage: $scope.itemsPerPage === 'all' ? Number.MAX_SAFE_INTEGER : parseInt($scope.itemsPerPage)
-                });
-            };
-
-            // Alterar quantidade de itens por página
-
-            $scope.changeItemsPerPage = function () {
-                $scope.changePage(1);
-            };
-        }
-
-        function link(scope, element, attrs) { }
-
-        return directive;
     }
 
 })(angular);
-

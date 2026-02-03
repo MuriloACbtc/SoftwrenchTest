@@ -1,22 +1,25 @@
 ﻿<!-- TODO: make it a reusable directive (don't worry about style) -->
 <div class="pagination">
+
     <div>
         Items per page
-        <select ng-model="itemsPerPage" ng-change="changeItemsPerPage()" ng-init="itemsPerPage=20" ng-options="option.value as option.label for option 
-            in [{ value: 10, label: '10' }, { value: 20, label: '20' }, { value: 30, label: '30' }, { value: 1,  label: 'All' }]">
+        <select ng-model="pager.pageSize" ng-change="onPageSizeChange(pager.pageSize)">
+            <!-- select how many items should be displayed per page -->
+            <option selected="selected" value="20">20</option> <!-- default option on first load should be 20 -->
+            <option value="30">30</option>
+            <option value="0">all</option> <!-- disregard pagination: show all the items -->
         </select>
     </div>
     <div>
-        <button ng-click="firstPage()">&lt;&lt;</button> <!-- 'go to first page' button -->
-        <button ng-click="prevPage()">&lt;</button> <!-- 'go to previous page' button: can't go lower than 1 -->
-        
-        Page <input type="number" ng-model="currentPage" ng-change="changePage(currentPage)" min="1" max="{{totalPages}}"/> <!-- input to select page to go to: go to page when input changes value --> of {{totalPages}} <!-- number of pages -->
+        <button ng-click="first()" ng-disabled="pager.page <= 1">&lt;&lt;</button> <!-- 'go to first page' button -->
+        <button ng-click="prev()" ng-disabled="pager.page <= 1">&lt;</button> <!-- 'go to previous page' button: can't go lower than 1 -->
+        Page
+        <input type="number" min="1" max="{{pager.totalPages}}" ng-model="pager.page" ng-change="goto()" style="width:60px;" />
 
-        <button ng-click="nextPage()">&gt;</button> <!-- 'go to next page' button: can't go higher than last page number -->
-        <button ng-click="lastPage()">&gt;&gt;</button> <!-- 'go to last page' button -->
-    </div>
-    <div>
-        <span>{{totalItems}} items</span> <!-- total number of items -->
+        of {{pager.totalPages}} ({{pager.totalItems}} items)
+
+        <button ng-click="next()" ng-disabled="pager.page >= pager.totalPages">&gt;</button> <!-- 'go to next page' button: can't go higher than last page number -->
+        <button ng-click="last()" ng-disabled="pager.page >= pager.totalPages">&gt;&gt;</button> <!-- 'go to last page' button -->
     </div>
 
 </div>

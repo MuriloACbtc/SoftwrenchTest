@@ -1,57 +1,85 @@
 ﻿<!-- table of contents -->
-<table ng-if="!loading">
-    <!-- table:header -->
-    <tr>
-        <!--
+<div class="todo-list-container">
 
-        Sorting by property:
-        - On first load by default the list should come sorted by 'createdDate' descending.
-        - Clicking the header title (text inside <th> element) should sort the list by the corresponding property.
-        - When the user clicks to sort an indicator (e.g. icon, img, word, etc) that indicates the sort order should appear on the right side of the header title.
-        - Clicking the header again should invert the sorting order for that property. The first click should order by the property in ascending order.
-        - The list can be sorted by a single property at a time.
-        - e.g.: list loads for the first time (no indicators displaying beside the table's headers's titles) -> user clicks the 'id' header ->
-        sort list by 'id' property -> show indicator beside the 'id' title indicating the ascending sort order -> user clicks the 'id' header again ->
-        sort list by 'id' in descending order -> show indicator beside the 'id' title indicating the descending sort order ->
-        user clicks on the 'task' header -> sort list only by 'task' property in ascending order ->
-        show indicator beside the 'task' title indicating the ascending sort order -> remove indicator from the 'id' header
-        - PS:
-            . the sort should happen for the whole list (i.e. not just sort the current page)
-            . sort should remain 'active' while navigating in between pages
-            . the indicators don't need to look pretty, they just have to be distinct (ascending from descending) and communicate well what they're doing
+    <div ng-if="vm.error" class="error">{{vm.error}}</div>
 
-        -->
 
-        <!-- // Atribuindo ação para ordenar itens ao clicar no cabeçalho -->
+    <table class="todo-table">
+        <thead>
+            <tr>
+                <!--
 
-        <th ng-click="sortData('id')">Id {{ getSortClass('id') }}</th>
-        <th ng-click="sortData('task')">Task {{ getSortClass('task') }}</th>
-        <th ng-click="sortData('createdDate')">Created Date {{ getSortClass('createdDate') }}</th>
-    </tr>
-    
-    <!-- table:body -->
-    <!--
+                Sorting by property:
+                - On first load by default the list should come sorted by 'createdDate' descending.
+                - Clicking the header title (text inside <th> element) should sort the list by the corresponding property.
+                - When the user clicks to sort an indicator (e.g. icon, img, word, etc) that indicates the sort order should appear on the right side of the header title.
+                - Clicking the header again should invert the sorting order for that property. The first click should order by the property in ascending order.
+                - The list can be sorted by a single property at a time.
+                - e.g.: list loads for the first time (no indicators displaying beside the table's headers's titles) -> user clicks the 'id' header ->
+                sort list by 'id' property -> show indicator beside the 'id' title indicating the ascending sort order -> user clicks the 'id' header again ->
+                sort list by 'id' in descending order -> show indicator beside the 'id' title indicating the descending sort order ->
+                user clicks on the 'task' header -> sort list only by 'task' property in ascending order ->
+                show indicator beside the 'task' title indicating the ascending sort order -> remove indicator from the 'id' header
+                - PS:
+                    . the sort should happen for the whole list (i.e. not just sort the current page)
+                    . sort should remain 'active' while navigating in between pages
+                    . the indicators don't need to look pretty, they just have to be distinct (ascending from descending) and communicate well what they're doing
 
-    When the list is still loading (first load or any request made to server to fetch a page):
-    - A loading indicator should be displayed instead of the table body to indicate it
-    - It can be any kind of indicator (text, icon, img, etc). 
-    - Dont worry about styling (looking pretty, centralized, etc) it just has to show that the app is still active while the request is being made
+                -->
 
-    -->
 
-    <tr ng-repeat="todo in todos | orderBy:sortColumn:reverseSort track by $index">
-        <td>{{todo.id}}</td>
-        <td>{{todo.task}}</td>
-        <td>{{todo.createdDate | date:'MM/dd/yyyy' }}</td>
-    </tr>
-</table>
 
-<!-- Mensagem de carregamento enquanto busca os dados no repositório-->
+                <th style="cursor:pointer" ng-click="vm.sort('Id')">
+                    ID
+                    <span ng-if="vm.pager.sortField === 'Id'">
+                        {{ vm.pager.sortDir == 'asc' ? '↑' : '↓' }}
+                    </span>
+                </th>
 
-<div class="loading-container" ng-if="loading">
-    <div class="spinner"></div>
-    <p>Carregando dados do repositório</p>
+                <th style="cursor:pointer" ng-click="vm.sort('Task')">
+                    Task
+                    <span ng-if="vm.pager.sortField === 'Task'">
+                        {{ vm.pager.sortDir == 'asc' ? '↑' : '↓' }}
+                    </span>
+                </th>
+
+                <th style="cursor:pointer" ng-click="vm.sort('CreatedDate')">
+                    Created Date
+                    <span ng-if="vm.pager.sortField === 'CreatedDate'">
+                        {{ vm.pager.sortDir == 'asc' ? '↑' : '↓' }}
+                    </span>
+                </th>
+
+
+            </tr>
+        </thead>
+
+        <tbody>
+            <!-- loading indicator -->
+            <tr ng-if="vm.loading">
+                <td colspan="3">Carregando...</td>
+            </tr>
+
+
+            <!-- when not loading, show items -->
+            <tr ng-if="!vm.loading" ng-repeat="todo in vm.todos track by $index">
+                <td>{{todo.Id || todo.id}}</td>
+                <td>{{todo.Task || todo.task}}</td>
+                <td>
+                    {{ (todo.CreatedDate || todo.createdDate) | date:'MM/dd/yyyy' }}
+                </td>
+            </tr>
+
+
+
+            <!-- empty state -->
+            <tr ng-if="!vm.loading && (!vm.todos || vm.todos.length === 0)">
+                <td colspan="3">Nenhum item</td>
+            </tr>
+
+        </tbody>
+    </table>
+
+    <!-- pagination component (uses the pagination directive) -->
+    <pagination></pagination>
 </div>
-
-<!-- pagination component -->
-<pagination total-items="totalItems" items-per-page="itemsPerPage" current-page="currentPage"></pagination>

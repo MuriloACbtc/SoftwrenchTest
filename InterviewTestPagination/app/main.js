@@ -26,7 +26,7 @@
                 // pager state
                 vm.pager = {
                     page: 1,
-                    pageSize: 20, // default
+                    pageSize: 20, // default, por padrão já abre com 20 itens por página
                     totalItems: 0,
                     totalPages: 1,
                     sortField: "CreatedDate",
@@ -76,7 +76,7 @@
                             vm.todos = items;
                             vm.pager.totalItems = total;
                             vm.pager.page = raw.Page || raw.page || vm.pager.page;
-                            vm.pager.pageSize = raw.PageSize || raw.pageSize || vm.pager.pageSize;
+                            vm.pager.pageSize = (raw.PageSize || raw.pageSize || vm.pager.pageSize).toString();
 
                             // calcula totalPages
                             vm.pager.totalPages = (vm.pager.pageSize <= 0)

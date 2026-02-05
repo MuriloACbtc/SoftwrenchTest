@@ -5,7 +5,8 @@
         Items per page
         <select ng-model="pager.pageSize" ng-change="onPageSizeChange(pager.pageSize)">
             <!-- select how many items should be displayed per page -->
-            <option selected="selected" value="20">20</option> <!-- default option on first load should be 20 -->
+            <option value="10">10</option>
+            <option value="20">20</option> <!-- default option on first load should be 20, o main.js já seleciona automaticamente o 20 para iniciar com a página -->
             <option value="30">30</option>
             <option value="0">all</option> <!-- disregard pagination: show all the items -->
         </select>
